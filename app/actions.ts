@@ -67,33 +67,29 @@ export async function getProducts(owner: string) {
   })
   return data
 }
-export async function getSales() {
-  const data = await prisma.sales.findMany({
-    select: {
-      id: true,
-      quantity: true,
-      price: true,
-      sale_date: true,
-      product: {
-        select: {
-          name: true,
+
+export async function getProductSalesLogs() {
+  const [groupedSales, saleLogs] = await Promise.all([
+    prisma.sales.groupBy({
+      by: ['productId'],
+      _sum: { quantity: true },
+    }),
+
+    prisma.sales.findMany({
+      select: {
+        id: true,
+        quantity: true,
+        price: true,
+        sale_date: true,
+        product: {
+          select: { name: true },
         },
       },
-    },
-    orderBy: {
-      sale_date: 'desc',
-    },
-  });
-  return data
-}
-
-export async function getSalesPerProduct() {
-  const groupedSales = await prisma.sales.groupBy({
-    by: ['productId'],
-    _sum: {
-      quantity: true,
-    },
-  });
+      orderBy: { sale_date: 'desc' },
+      // ⚠️ strongly consider pagination
+      // take: 50,
+    }),
+  ]);
 
   const productIds = groupedSales.map(s => s.productId);
 
@@ -102,13 +98,21 @@ export async function getSalesPerProduct() {
     select: { id: true, name: true },
   });
 
-  const result = groupedSales.map(sale => ({
+  // 🔥 O(1) lookup instead of find()
+  const productMap = new Map(
+    products.map(p => [p.id, p.name])
+  );
+
+  const totalSales = groupedSales.map(sale => ({
     productId: sale.productId,
-    productName: products.find(p => p.id === sale.productId)?.name,
-    totalSold: sale._sum.quantity,
+    productName: productMap.get(sale.productId) ?? 'Unknown',
+    totalSold: sale._sum.quantity ?? 0,
   }));
 
-  return result
+  return {
+    totalSales,
+    saleLogs,
+  };
 }
 
 export async function createSale(id: string) {

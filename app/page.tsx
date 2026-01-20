@@ -2,7 +2,7 @@
 
 import React, { useActionState, useCallback, useState, useEffect } from 'react';
 import { Plus, Minus } from 'lucide-react';
-import { createProduct, getProducts, createSale, removeSale, getSales, getSalesPerProduct } from './actions';
+import { createProduct, getProducts, createSale, removeSale, getProductSalesLogs } from './actions';
 import type { Product } from '@/types/product';
 import { toast, ToastContainer } from 'react-toastify';
 import { Sales } from '@/types/sale';
@@ -39,10 +39,6 @@ export default function ProductManager() {
     onTabClick('kevin')
   },[])
 
-  useEffect(() => {
-    getAllSales()
-  },[salePerProduct])
-
   const openConfirmModal = (action: string, productId: string) => {
     setConfirmAction({ action, productId });
     setShowConfirmModal(true);
@@ -53,21 +49,18 @@ export default function ProductManager() {
     setActiveTab(name);
     const list = await getProducts(name);
     setProductList(list);
-    console.log(productList, 'get products')
-    await getProductSales()
+    console.log(list, 'get products')
+    await getProductSalesAndLogs()
     setIsLoading(false)
     },[])
 
-  const getProductSales = useCallback(async () => {
-    const sales = await getSalesPerProduct()
-    setSalePerProduct(sales)
+  const getProductSalesAndLogs = useCallback(async () => {
+    const sales = await getProductSalesLogs()
+    const list = await getProducts(activeTab);
+    setProductList(list);
+    setSalePerProduct(sales.totalSales)
+    setSaleLogs(sales.saleLogs)
     console.log(sales, ' get sales per product')
-    },[])
-
-  const getAllSales = useCallback(async () => {
-    const sales = await getSales()
-    setSaleLogs(sales)
-    console.log(sales, ' get sales logs')
     },[])
 
   const addRemoveSale = useCallback(async (productId : string) => {
@@ -77,8 +70,7 @@ export default function ProductManager() {
     setShowConfirmModal(false)
     console.log(tx)
     if(tx?.success){
-      const sales = await getSalesPerProduct()
-      setSalePerProduct(sales)
+      getProductSalesAndLogs()
       console.log(salePerProduct,'getSalesPerProduct')
       toast.success('success', {
         position: 'top-right',
@@ -89,6 +81,115 @@ export default function ProductManager() {
       });
     }
   },[confirmAction])
+
+  const createModal = <>
+  {showCreateModal && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 className="text-xl font-bold mb-4">Create New Product</h3>
+        <form action={formCreateProduct}>
+        <div className="space-y-4">
+          <input hidden value={activeTab} name='owner'/>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Product Name*</label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter product name"
+              required
+              name='name'
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity*</label>
+            <input
+              type="number"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter stock quantity"
+              required
+              name='stock'
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Price*</label>
+            <input
+              type="number"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter price"
+              required
+              name='price'
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <input
+              type="string"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter description"
+              name='description'
+            />
+          </div>
+        </div>
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={() => {
+              setShowCreateModal(false);
+            }}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            type='submit'
+          >
+            Create
+          </button>
+        </div>
+        </form>
+      </div>
+    </div>
+  )}
+  </>
+
+  const confirmModal = <>
+  {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4">Confirm Action</h3>
+            <p className="text-gray-700 mb-6">
+              Are you sure you {confirmAction?.action === 'remove' ? 'unsell' : 'sold'} this product?
+            </p>
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <CircleLoader size={40} color="#3b82f6" />
+                </div>) : <></>
+              }
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowConfirmModal(false);
+                    setConfirmAction({ action: '', productId: '' });
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => addRemoveSale(confirmAction.productId)}
+                  className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
+                    confirmAction?.action === 'remove'
+                      ? 'bg-red-500 hover:bg-red-600'
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  }`}
+                >
+                  Confirm
+                </button>
+              </div>
+          </div>
+        </div>
+      )}
+  </>
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -181,14 +282,15 @@ export default function ProductManager() {
         </div>
       </div>
 
-      <div className="">
+      {/* sales log */}
+      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden mt-10">
         {isLoading ? (
           <div className="flex justify-center py-8">
             <CircleLoader size={40} color="#3b82f6" />
           </div>
         ) : 
         saleLogs.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">No products yet. Create one to get started!</p>
+          <p className="text-gray-500 text-center py-8">No sales yet</p>
         ) : (
           saleLogs.map(log => (
             <div key={log.id} className="flex items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -201,111 +303,10 @@ export default function ProductManager() {
       </div>
 
       {/* Create Product Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">Create New Product</h3>
-            <form action={formCreateProduct}>
-            <div className="space-y-4">
-              <input hidden value={activeTab} name='owner'/>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product Name*</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter product name"
-                  required
-                  name='name'
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity*</label>
-                <input
-                  type="number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter stock quantity"
-                  required
-                  name='stock'
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price*</label>
-                <input
-                  type="number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter price"
-                  required
-                  name='price'
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <input
-                  type="string"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter description"
-                  name='description'
-                />
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                type='submit'
-              >
-                Create
-              </button>
-            </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {createModal}
 
       {/* Confirmation Modal */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">Confirm Action</h3>
-            <p className="text-gray-700 mb-6">
-              Are you sure you {confirmAction?.action === 'remove' ? 'unsell' : 'sold'} this product?
-            </p>
-              {isLoading ? (
-                <div className="flex justify-center py-8">
-                  <CircleLoader size={40} color="#3b82f6" />
-                </div>) : <></>
-              }
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowConfirmModal(false);
-                    setConfirmAction({ action: '', productId: '' });
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => addRemoveSale(confirmAction.productId)}
-                  className={`flex-1 px-4 py-2 text-white rounded-lg transition-colors ${
-                    confirmAction?.action === 'remove'
-                      ? 'bg-red-500 hover:bg-red-600'
-                      : 'bg-blue-500 hover:bg-blue-600'
-                  }`}
-                >
-                  Confirm
-                </button>
-              </div>
-          </div>
-        </div>
-      )}
+      {confirmModal}
     </div>
   );
 }
