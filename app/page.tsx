@@ -27,7 +27,7 @@ export default function ProductManager() {
         position: 'top-right',
       });
       onTabClick(activeTab)
-    }else{
+    }else if(state?.error){
       toast.error('error', {
         position: 'top-right',
       });
