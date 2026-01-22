@@ -5,77 +5,38 @@ import { redirect } from 'next/navigation'
 import React from 'react'
 import { supabase } from '../lib/supabase'
 
-export async function createProduct(prevState: unknown, formData: FormData) {
-  try{
-    const owner = formData.get('owner') as string
-    const name = formData.get('name') as string
-    const description = formData.get('description') as string
-    const price = parseFloat(formData.get('price') as string)
-    const stock = parseInt(formData.get('stock') as string, 10)
-    const data = await prisma.products.create({
-      data:{
-        owner: owner,
-        name: name,
-        description: description,
-        price: price,
-        stock: stock
-      }
-    })
-    return { success: true }
-  }catch (error) {
-    console.error('Error', error);
-    return {
-      success: false,
-      message: 'Something went wrong',
-      error: error
-    }
-  }
+
+//get reqs
+export async function getCategories(owner: string) {
+  const categories = await prisma.category.findMany({
+    where: { owner: owner },
+    orderBy: { order: 'asc' },
+    include: { products: true },
+  });
+
+  return categories
 }
 
-export async function editProduct(prevState: unknown, formData: FormData) {
-  const id = formData.get('id') as string
-  const description = formData.get('description') as string
-  const price = parseFloat(formData.get('price') as string)
-  const stock = parseInt(formData.get('stock') as string, 10)
-  const data = await prisma.products.update({
-    where:{
-      id: id
-    },
-    data:{
-      description: description,
-      price: price,
-      stock: stock
-    }
-  })
-  return data
-}
-
-export async function deleteProduct(id: string) {
-  const data = await prisma.products.delete({
-    where:{
-      id: id
-    }
-  })
-  return data
-}
-
-export async function getProducts(owner: string) {
+export async function getProducts(owner: string, categoryId: string) {
   const data = await prisma.products.findMany({
     where:{
-      owner: owner
+      owner: owner,
+      categoryId: categoryId
     }
   })
   return data
 }
 
-export async function getProductSalesLogs() {
+export async function getProductSalesLogs(owner: string) {
   const [groupedSales, saleLogs] = await Promise.all([
     prisma.sales.groupBy({
       by: ['productId'],
+      where: { product: { owner: owner } },
       _sum: { quantity: true },
     }),
 
     prisma.sales.findMany({
+      where: { product: { owner: owner } },
       select: {
         id: true,
         quantity: true,
@@ -86,9 +47,7 @@ export async function getProductSalesLogs() {
         },
       },
       orderBy: { sale_date: 'desc' },
-      // ⚠️ strongly consider pagination
-      // take: 50,
-    }),
+    })
   ]);
 
   const productIds = groupedSales.map(s => s.productId);
@@ -113,6 +72,59 @@ export async function getProductSalesLogs() {
     totalSales,
     saleLogs,
   };
+}
+
+//create reqs
+export async function createProduct(prevState: unknown, formData: FormData) {
+  try{
+    const owner = formData.get('owner') as string
+    const name = formData.get('name') as string
+    const description = formData.get('description') as string
+    const price = parseFloat(formData.get('price') as string)
+    const stock = parseInt(formData.get('stock') as string, 10)
+    const categoryId = formData.get('categoryId') as string
+    const data = await prisma.products.create({
+      data:{
+        owner: owner,
+        name: name,
+        description: description,
+        price: price,
+        stock: stock,
+        categoryId: categoryId
+      }
+    })
+    return { success: true }
+  }catch (error) {
+    console.error('Error', error);
+    return {
+      success: false,
+      message: 'Something went wrong',
+      error: error
+    }
+  }
+}
+
+export async function createCategory(prevState: unknown, formData: FormData) {
+  try{
+    const owner = formData.get('owner') as string
+    const name = formData.get('name') as string
+    const order = parseInt(formData.get('order') as string, 10)
+    const data = await prisma.category.create({
+      data:{
+        owner: owner,
+        name: name,
+        order: order,
+      }
+    })
+    return { success: true }
+  }catch (error) {
+    console.error('Error', error);
+    return {
+      success: false,
+      message: 'Something went wrong',
+      error: error
+    }
+  }
 }
 
 export async function createSale(id: string) {
@@ -159,6 +171,35 @@ export async function createSale(id: string) {
       error: error
     }
   }
+}
+
+// put reqs
+export async function editProduct(prevState: unknown, formData: FormData) {
+  const id = formData.get('id') as string
+  const description = formData.get('description') as string
+  const price = parseFloat(formData.get('price') as string)
+  const stock = parseInt(formData.get('stock') as string, 10)
+  const data = await prisma.products.update({
+    where:{
+      id: id
+    },
+    data:{
+      description: description,
+      price: price,
+      stock: stock
+    }
+  })
+  return data
+}
+
+//delete reqs
+export async function deleteProduct(id: string) {
+  const data = await prisma.products.delete({
+    where:{
+      id: id
+    }
+  })
+  return data
 }
 
 export async function removeSale(id: string) {
