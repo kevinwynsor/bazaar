@@ -1,19 +1,24 @@
 'use client'
 
 import React, { useActionState, useCallback, useState, useEffect } from 'react';
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, RefreshCcw } from 'lucide-react';
 import { createProduct, getProducts, createSale, removeSale, getProductSalesLogs, createCategory, getCategories } from './actions';
 import type { Product } from '@/types/product';
 import { toast, ToastContainer } from 'react-toastify';
-import { Sales } from '@/types/sale';
 import { PacmanLoader } from "react-spinners";
+import type { Category, Products, Sales } from '../app/generated/prisma';
 
+
+type CategoryWithProducts = Category & {
+  products: Products[];
+};
 
 export default function ProductManager() {
   const [activeTab, setActiveTab] = useState('kevin');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState('');
-  const [productList, setProductList] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categoryWithProductList, setCategoryWithProductList] = useState<CategoryWithProducts[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [salePerProduct, setSalePerProduct] = useState<any[]>([]);
   const [saleLogs, setSaleLogs] = useState<any[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -66,36 +71,54 @@ export default function ProductManager() {
 
   const onTabClick = async (name: string, ) => {
     setActiveTab(name)
-    setCategories([])
-    setProductList([])
+    setCategoryWithProductList([])
     setActiveCategory('')
-    }
-
-  const onTabChange = async () =>{
-    setIsLoading(true)
-    const category = await getCategories(activeTab)
-    await getProductSalesAndLogs()
-    setCategories(category)
-    setIsLoading(false)
   }
 
-  const onCategoryTabClick = useCallback(async (categoryId: string) => {
-    setIsLoading(true)
-    setActiveCategory(categoryId);
-    console.log(activeTab, categoryId, 'active tab and category')
-    const list = await getProducts(activeTab, categoryId);
-    setProductList(list);
-    console.log(list, 'get products')
-    setIsLoading(false)
-    },[activeTab])
-
+  
   const getProductSalesAndLogs = useCallback(async () => {
     setIsSalesLoading(true)
     const sales = await getProductSalesLogs(activeTab)
     setSalePerProduct(sales.totalSales)
     setSaleLogs(sales.saleLogs)
     setIsSalesLoading(false)
-    },[activeTab, activeCategory])
+  },[activeTab, activeCategory])
+
+  const refresh = async () =>{
+    setIsRefreshing(true)
+    setIsLoading(true)
+    setIsSalesLoading(true)
+    await onTabChange()
+    await getProductSalesAndLogs()
+    setIsLoading(false)
+    setIsSalesLoading(false)
+    setIsRefreshing(false)
+  }
+
+  const onTabChange = async () => {
+    setIsLoading(true)
+  
+    try {
+      const [
+        category,
+        list,
+        _ // result of getProductSalesAndLogs (if you don’t need the return)
+      ] = await Promise.all([
+        getCategories(activeTab),
+        getProducts(activeTab),
+        getProductSalesAndLogs()
+      ])
+  
+      console.log(list, 'product list')
+      setCategoryWithProductList(list)
+      setCategories(category)
+  
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const addRemoveSale = useCallback(async (productId : string, ) => {
     setIsLoading(true)
@@ -325,6 +348,13 @@ export default function ProductManager() {
         {/* Content */}
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
+            <RefreshCcw size={40} onClick={!isRefreshing ? refresh : undefined}
+              className={`cursor-pointer transition-all
+                ${isRefreshing
+                  ? 'animate-spin text-blue-500 opacity-70'
+                  : 'text-gray-600 hover:text-blue-600 active:scale-90'
+                }
+            `}/>
             <h2 className="text-2xl font-bold text-gray-800">{activeTab}'s Products</h2>
             <button
               onClick={() => setShowCategoryModal(true)}
@@ -341,20 +371,6 @@ export default function ProductManager() {
               Create Product
             </button>
           </div>
-          <div className="flex border-b">
-            {categories.map((category) => (
-              <button
-              onClick={() => onCategoryTabClick(category.id)}
-              className={`flex-1 py-4 px-6 text-lg font-semibold transition-colors ${
-                activeCategory === category.id
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-              >
-                  {category.name}
-              </button>
-            ))}
-        </div>
 
           {/* Product List */}
           <div className="space-y-3">
@@ -363,42 +379,53 @@ export default function ProductManager() {
                 <PacmanLoader size={40} color="#000000" />
               </div>
             ) : 
-            productList.length === 0 ? (
+            categoryWithProductList.length === 0 ? (
               <p className="text-gray-500 text-center py-8">No products yet. Create one to get started!</p>
             ) : (
-              productList.map(product => (
-                <div key={product.id} className="flex items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  <div>
-                    <h3 className="font-semibold text-gray-800">{product.name}, {product.stock} left</h3>
-                    <p className="text-gray-600">P{product.price}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    {salePerProduct.some(s => s.productId === product.id) ? (
-                      salePerProduct
-                        .filter(s => s.productId === product.id)
-                        .map((sale, index) => (
-                          <div key={index} className="text-sm text-gray-500">
-                            Sold {sale.totalSold}
+              categoryWithProductList.map(category => (
+                <div key={category.id} >
+                    <div className="flex items-center justify-between px-4 py-2 bg-blue-100 border-l-4 border-blue-500 rounded-md">
+                      <span className="text-sm font-semibold text-blue-800 uppercase tracking-wide">
+                        {category.name}
+                      </span>
+                    </div>
+                    <div className="items-center justify-between bg-gray-50 p-4 rounded-lg border border-gray-200 divide-y divide-gray-200">
+                      {category.products.map(product => (
+                        <div className='flex items-center justify-between'>
+                          <div className='flex flex-col'>
+                            <h3 className="font-semibold text-gray-800">{product.name}, {product.stock} left</h3>
+                            <p className="text-gray-600">P{product.price}</p>
                           </div>
-                        ))
-                    ) : (
-                      <div className="text-sm text-gray-500">
-                        Sold 0
-                      </div>
-                    )}
-                    <button
-                      onClick={() => openConfirmModal('remove', product.id)}
-                      className="bg-red-500 hover:bg-red-600 text-white p-2 rounded transition-colors"
-                    >
-                      <Minus size={20} />
-                    </button>
-                    <button
-                      onClick={() => openConfirmModal('add', product.id)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded transition-colors"
-                    >
-                      <Plus size={20} />
-                    </button>
-                  </div>
+                          <div className="flex gap-2">
+                            {salePerProduct.some(s => s.productId === product.id) ? (
+                              salePerProduct
+                                .filter(s => s.productId === product.id)
+                                .map((sale, index) => (
+                                  <div key={index} className="text-sm text-gray-500">
+                                    Sold {sale.totalSold}
+                                  </div>
+                                ))
+                            ) : (
+                              <div className="text-sm text-gray-500">
+                                Sold 0
+                              </div>
+                            )}
+                            <button
+                              onClick={() => openConfirmModal('remove', product.id)}
+                              className="bg-red-500 hover:bg-red-600 text-white p-2 rounded transition-colors"
+                            >
+                              <Minus size={20} />
+                            </button>
+                            <button
+                              onClick={() => openConfirmModal('add', product.id)}
+                              className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded transition-colors"
+                            >
+                              <Plus size={20} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                 </div>
               ))
             )}

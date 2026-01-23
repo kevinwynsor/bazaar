@@ -17,14 +17,20 @@ export async function getCategories(owner: string) {
   return categories
 }
 
-export async function getProducts(owner: string, categoryId: string) {
-  const data = await prisma.products.findMany({
-    where:{
-      owner: owner,
-      categoryId: categoryId
-    }
-  })
-  return data
+export async function getProducts(owner: string) {
+  const categories = await prisma.category.findMany({
+    orderBy: {
+      order: 'asc',
+    },
+    include: {
+      products: {
+        orderBy: {
+          name: 'asc', // optional
+        },
+      },
+    },
+  });
+  return categories
 }
 
 export async function getProductSalesLogs(owner: string) {
