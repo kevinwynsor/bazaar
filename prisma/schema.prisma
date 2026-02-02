@@ -15,38 +15,24 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model Sales {
-  id           String       @id @default(uuid())
-  productId    String
-  quantity     Int
-  price        Float
-  sale_date    DateTime  @default(now())
-  product     Products? @relation(fields: [productId], references: [id])
-}
-
-model Category {
-  id        String     @id @default(uuid())
-  owner     String
-  name      String
-  order     Int        // controls UI placement
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  products  Products[]
-}
-
 model Products {
-  id          String     @id @default(uuid())
-  owner       String
-  name        String     @unique
-  description String?
-  price       Float
-  stock       Int
-  created_at  DateTime   @default(now())
-  updated_at  DateTime   @updatedAt
+  id        String   @id @default(uuid())
+  name      String
+  quantity  Int
+  category  String
+  price     Float
+  owner     String
+  createdAt DateTime @default(now())
+  sales     Sales[]
+}
 
-  categoryId  String
-  category    Category  @relation(fields: [categoryId], references: [id])
-
-  Sales       Sales[]
+model Sales {
+  id        String   @id @default(uuid())
+  productId String
+  product   Products @relation(fields: [productId], references: [id])
+  owner    String
+  quantity Int
+  price    Float
+  type     String // "sale", "return", etc.
+  createdAt   DateTime @default(now())
 }
