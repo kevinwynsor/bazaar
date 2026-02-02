@@ -17,7 +17,7 @@ datasource db {
 
 model Products {
   id        String   @id @default(uuid())
-  name      String
+  name      String   @unique
   quantity  Int
   category  String
   price     Float
@@ -33,6 +33,6 @@ model Sales {
   owner    String
   quantity Int
   price    Float
-  type     String // "sale", "return", etc.
+  type     String // "sale", "unsale", etc.
   createdAt   DateTime @default(now())
 }

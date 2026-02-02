@@ -4,37 +4,35 @@ import { prisma } from '@/lib/db'
 
 //get
 export async function getInventoryItems(owner: 'kevin' | 'aya') {
-  try{
-    await prisma.products.findMany({
+    const product = await prisma.products.findMany({
       where: { owner },
       orderBy: { createdAt: 'desc' },
     })
-    return{ success: true }
-  }catch(error){
-    console.log('Error fetching inventory items:', error);
-    return { success: false, error: 'Failed to fetch inventory items' }
-  }
+    return  product 
 }
 
 export async function getSalesRecords(owner: 'kevin' | 'aya') {
-  try{
-    await prisma.sales.findMany({
+    const sales = await prisma.sales.findMany({
       where: { owner },
       orderBy: { createdAt: 'desc' },
+      include: {
+        product: {
+          select: {
+            name: true,
+          },
+        },
+      },
     })
-  }catch(error){
-    console.log('Error fetching sales:', error);
-    return { success: false, error: 'Failed to fetch sales' }
-  }
+    return sales
 }
 
 //post
 export async function addInventoryItem(prevState: unknown, formData: FormData){
   try{
-    const name = formData.get('name') as string
-    const quantity = parseInt(formData.get('quantity') as string, 10)
+    const name = String(formData.get('name') ?? '').trim().toLowerCase() as string
+    const quantity = Number(formData.get('quantity'))
     const category = formData.get('category') as string
-    const price = parseFloat(formData.get('price') as string)
+    const price = Number(formData.get('price'))
     const owner = formData.get('owner') as string
     await prisma.products.create({
       data: {
@@ -45,38 +43,33 @@ export async function addInventoryItem(prevState: unknown, formData: FormData){
         owner,
       },
     })
+    return { success: true }
   }catch(error){
     console.log('Error adding inventory items:', error);
     return { success: false, error: 'Failed to add inventory items' }
   }
 }
 
-export async function addSales(prevState: unknown, formData: FormData){
+export async function addSales(id: string, owner:string, price: number){
   try{
-    const productId = formData.get('productId') as string
-    const owner = formData.get('owner') as string
-    const quantity = parseInt(formData.get('quantity') as string, 10)
-    const price = parseFloat(formData.get('price') as string)
-    const type = formData.get('type') as string
-
     await prisma.$transaction(async (tx) => {
       // 1. Create sale record
       await tx.sales.create({
         data: {
-          productId,
+          productId: id,
           owner,
-          quantity,
+          quantity: 1,
           price,
-          type,
+          type: 'sale',
         },
       })
 
       // 2. Reduce product quantity
       await tx.products.update({
-        where: { id: productId },
+        where: { id: id },
         data: {
           quantity: {
-            decrement: quantity,
+            decrement: 1,
           },
         },
       })
@@ -91,32 +84,26 @@ export async function addSales(prevState: unknown, formData: FormData){
 //put
 
 //delete
-export async function removeSales(prevState: unknown, formData: FormData){
+export async function removeSales(id: string, owner:string, price: number){
   try{
-    const productId = formData.get('productId') as string
-    const owner = formData.get('owner') as string
-    const quantity = parseInt(formData.get('quantity') as string, 10)
-    const price = parseFloat(formData.get('price') as string)
-    const type = formData.get('type') as string
-
     await prisma.$transaction(async (tx) => {
       // 1. Create sale record
       await tx.sales.create({
         data: {
-          productId,
+          productId: id,
           owner,
-          quantity,
+          quantity: 1,
           price,
-          type,
+          type: 'unsale',
         },
       })
 
       // 2. Reduce product quantity
       await tx.products.update({
-        where: { id: productId },
+        where: { id },
         data: {
           quantity: {
-            increment: quantity,
+            increment: 1,
           },
         },
       })
