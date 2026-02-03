@@ -203,6 +203,7 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
                     >
                       <div className="flex-1">
                         <span className="font-medium text-gray-900">{item.name}</span>
+                        <span className="ml-4 px-3 py-1 rounded-full text-sm text-black-700">price: {item.price}</span>
                         <span
                           className={`ml-4 px-3 py-1 rounded-full text-sm ${
                             item.quantity === 0
