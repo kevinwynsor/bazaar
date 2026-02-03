@@ -251,7 +251,7 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
           <div className="">
             <div className="bg-white rounded-lg shadow-xl w-full p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2>Add New Product</h2>
+                <h2 className="text-black">Add New Product</h2>
                 <button
                   onClick={() => closeModal()}
                   className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
@@ -278,7 +278,7 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
                     autoComplete='off'
                     value={newProduct.name}
                     onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="text-black w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     required
                   />
                 </div>
@@ -294,7 +294,7 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
                     name='category'
                     value={newProduct.category}
                     onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="text-black w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     required
                   />
                 </div>
@@ -310,7 +310,7 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
                     name='quantity'
                     value={newProduct.quantity}
                     onChange={(e) => setNewProduct({ ...newProduct, quantity: parseInt(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="text-black w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     min="0"
                     required
                   />
@@ -327,7 +327,7 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
                     name='price'
                     value={newProduct.price}
                     onChange={(e) => setNewProduct({ ...newProduct, price: parseFloat(e.target.value)})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="text-black w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                     min="0"
                     step="0.01"
                     required
