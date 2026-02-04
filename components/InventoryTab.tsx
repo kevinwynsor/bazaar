@@ -105,11 +105,10 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
   }
 
   const handleSale = async (itemId: string, price: number) => {
-    setIsLoading(true)
     const addSale = await addSales(itemId, owner, price)
     setInventory(prev =>
       prev?.map(item =>
-        item.id === itemId && item.quantity > 0
+        item.id === itemId
           ? { ...item, quantity: item.quantity - 1 }
           : item
       )
@@ -127,11 +126,9 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
       };
       setSalesLog(prev => [newSale, ...prev]);
     }
-    setIsLoading(false)
   };
 
   const handleRestock = async (itemId: string, price: number) => {
-    setIsLoading(true)
     console.log('restock')
     const removeSale = await removeSales(itemId, owner, price)
     setInventory(prev =>
@@ -154,7 +151,6 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
       };
       setSalesLog(prev => [newSale, ...prev]);
     }
-    setIsLoading(false)
   };
 
   // Group items by category
@@ -226,7 +222,6 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
                         </button>
                         <button
                           onClick={() => handleRestock(item.id, item.price)}
-                          disabled={item.quantity === 0}
                           className="p-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                           title="Record Sale"
                         >
