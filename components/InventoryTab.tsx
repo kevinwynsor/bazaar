@@ -178,7 +178,7 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
         
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2>Inventory</h2>
+            <h2 className='text-black'>Inventory</h2>
             <button
               onClick={() => openModal()}
               className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
@@ -199,7 +199,7 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
                     >
                       <div className="flex-1">
                         <span className="font-medium text-gray-900">{item.name}</span>
-                        <span className="ml-4 px-3 py-1 rounded-full font-medium text-gray-900">price: {item.price}</span>
+                        <span className="ml-4 px-3 py-1 rounded-full font-medium text-black">price: {item.price}</span>
                         <span
                           className={`ml-4 px-3 py-1 rounded-full text-sm ${
                             item.quantity === 0
