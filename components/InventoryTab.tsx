@@ -197,9 +197,9 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
                       key={item.id}
                       className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                     >
-                      <div className="flex-1">
-                        <span className="font-medium text-gray-900">{item.name}</span>
-                        <span className="ml-4 px-3 py-1 rounded-full font-medium text-black">price: {item.price}</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-3">
+                        <span className="font-medium text-gray-900 text-sm text-center content-center">{item.name}</span>
+                        <span className="ml-4 py-1 rounded-full text-md text-black">price:{item.price}</span>
                         <span
                           className={`ml-4 px-3 py-1 rounded-full text-sm ${
                             item.quantity === 0
