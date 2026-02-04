@@ -353,7 +353,7 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
   
         {/* Sales Log Section */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="mb-4">Sales Log</h2>
+          <h2 className="mb-4 text-black">Sales Log</h2>
           {salesLog.length === 0 ? (
             <p className="text-gray-500 text-center py-8">No sales recorded yet</p>
           ) : (
