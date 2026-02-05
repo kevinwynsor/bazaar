@@ -4,11 +4,21 @@ import { prisma } from '@/lib/db'
 
 //get
 export async function getInventoryItems(owner: 'kevin' | 'aya') {
+  if(owner === 'kevin'){
+    const product = await prisma.products.findMany({
+      where: { owner },
+      orderBy: { name: 'asc' },
+    })
+    return  product 
+  }
+
+  if(owner === 'aya'){
     const product = await prisma.products.findMany({
       where: { owner },
       orderBy: { createdAt: 'desc' },
     })
     return  product 
+  }
 }
 
 export async function getSalesRecords(owner: 'kevin' | 'aya') {

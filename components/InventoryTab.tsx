@@ -162,6 +162,12 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
     return acc;
   }, {} as Record<string, Item[]>);
 
+  const sortedCategorizedItems = Object.fromEntries(
+    Object.entries(categorizedItems || {}).sort(([a], [b]) =>
+      a.localeCompare(b)
+    )
+  );
+
   return (
     <>
     {isLoading ?
@@ -188,7 +194,7 @@ export function InventoryTab({ owner }: { owner: 'kevin' | 'aya' }) {
             </button>
           </div>
           <div className="space-y-6">
-            {Object.entries(categorizedItems ?? {}).map(([category, items]) => (
+            {Object.entries(sortedCategorizedItems ?? {}).map(([category, items]) => (
               <div key={category}>
                 <h3 className="text-gray-700 mb-3">{category}</h3>
                 <div className="space-y-2">
